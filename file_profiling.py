@@ -1,6 +1,6 @@
 import pandas as pd
 
-def analyze_csv(file_path):
+def analyze_csv(file_path, output_file):
     # Read the CSV file
     df = pd.read_csv(file_path)
     
@@ -34,10 +34,12 @@ def analyze_csv(file_path):
     
     # Convert the results dictionary to a DataFrame
     analysis_df = pd.DataFrame(analysis)
-    return analysis_df
+    
+    # Save the DataFrame to a CSV file
+    analysis_df.to_csv(output_file, index=False)
+    print(f"Analysis saved to {output_file}")
 
 # Usage example
-file_path = 'details.csv'  # Replace with your CSV file path
-result = analyze_csv(file_path)
-print(result)
-
+input_file_path = 'data/density.csv'  # Replace with your CSV file path
+output_file_path = 'file_profiles/density_results.csv'  # Replace with your desired output file path
+analyze_csv(input_file_path, output_file_path)

@@ -1,0 +1,5 @@
+Column Name,Suggested Type,Null Ratio (%),Distinct Value Count,Most Common Values (Top 10)
+Unnamed: 0,integer,0.0,612,"{0: 1, 443: 1, 432: 1, 433: 1, 434: 1, 435: 1, 440: 1, 441: 1, 442: 1, 444: 1}"
+state,string,0.0,51,"{'Alabama': 12, 'Pennsylvania': 12, 'Nevada': 12, 'New Hampshire': 12, 'New Jersey': 12, 'New Mexico': 12, 'New York': 12, 'North Carolina': 12, 'North Dakota': 12, 'Ohio': 12}"
+year,integer,0.0,12,"{2020: 51, 2010: 51, 2000: 51, 1990: 51, 1980: 51, 1970: 51, 1960: 51, 1950: 51, 1940: 51, 1930: 51}"
+density,floating,0.0,517,"{0.1: 4, 79.8: 4, 8.4: 4, 9.1: 3, 29.6: 3, 3.8: 3, 9.3: 3, 74.6: 3, 46.4: 3, 22.3: 3}"
