@@ -51,6 +51,9 @@ def transform_lookup_population_density(population_density_dict):
             return None
     return transform
 
+def transform_get_month_from_yearmonth(yearmonth):
+    return int(str(yearmonth)[-2:])
+
 
 
 def find_nearest(array, value):

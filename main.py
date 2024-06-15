@@ -5,7 +5,8 @@ from sqlalchemy import create_engine, MetaData, Table, Column, Integer, Float, S
 
 from extract.extract import load_and_clean_storm_details_data, load_and_clean_density_data
 from transform.transform import transform_damage_property_to_number, \
-    transform_group_damage_property, transform_group_magnitude, transform_lookup_population_density
+    transform_group_damage_property, transform_group_magnitude, transform_lookup_population_density, \
+    transform_get_month_from_yearmonth
 
 # Load environment variables
 load_dotenv()
@@ -133,30 +134,31 @@ metadata.create_all(engine)
 # Load data into database
 with engine.connect() as conn:
     # Insert into dimension tables
-    # time_data = storm_details_filtered[['YEAR', 'BEGIN_YEARMONTH', 'BEGIN_DAY']].drop_duplicates()
-    # time_data.columns = ['year', 'month', 'day']
-    # time_data['quarter'] = ((time_data['month'] - 1) // 3) + 1
-    # time_data.to_sql('dim_time', conn, if_exists='append', index=False)
+    time_data = storm_details_filtered[['YEAR', 'BEGIN_YEARMONTH', 'BEGIN_DAY']].drop_duplicates()
+    time_data['BEGIN_YEARMONTH'] = time_data['BEGIN_YEARMONTH'].apply(transform_get_month_from_yearmonth)
+    time_data.columns = ['year', 'month', 'day']
+    time_data['quarter'] = ((time_data['month'] - 1) // 3) + 1
+    time_data.to_sql('dim_time', conn, if_exists='append', index=False)
 
-    # location_data = storm_details_filtered[['STATE', 'CZ_NAME', 'BEGIN_LAT', 'BEGIN_LON']].drop_duplicates()
-    # location_data.columns = ['state', 'cz_name', 'lat', 'lon']
-    # location_data.to_sql('dim_location', conn, if_exists='append', index=False)
+    location_data = storm_details_filtered[['STATE', 'CZ_NAME', 'BEGIN_LAT', 'BEGIN_LON']].drop_duplicates()
+    location_data.columns = ['state', 'cz_name', 'lat', 'lon']
+    location_data.to_sql('dim_location', conn, if_exists='append', index=False)
 
     source_data = storm_details_filtered[['SOURCE']].drop_duplicates()
     source_data.columns = ['source']
     source_data.to_sql('dim_source', conn, if_exists='append', index=False)
 
-    # flood_cause_data = storm_details_filtered[['FLOOD_CAUSE']].drop_duplicates()
-    # flood_cause_data.columns = ['flood_cause']
-    # flood_cause_data.to_sql('dim_flood_cause', conn, if_exists='append', index=False)
+    flood_cause_data = storm_details_filtered[['FLOOD_CAUSE']].drop_duplicates()
+    flood_cause_data.columns = ['flood_cause']
+    flood_cause_data.to_sql('dim_flood_cause', conn, if_exists='append', index=False)
 
-    # event_type_data = storm_details_filtered[['EVENT_TYPE']].drop_duplicates()
-    # event_type_data.columns = ['event_type']
-    # event_type_data.to_sql('dim_event_type', conn, if_exists='append', index=False)
+    event_type_data = storm_details_filtered[['EVENT_TYPE']].drop_duplicates()
+    event_type_data.columns = ['event_type']
+    event_type_data.to_sql('dim_event_type', conn, if_exists='append', index=False)
 
-    # wfo_data = storm_details_filtered[['WFO']].drop_duplicates()
-    # wfo_data.columns = ['wfo']
-    # wfo_data.to_sql('dim_wfo', conn, if_exists='append', index=False)
+    wfo_data = storm_details_filtered[['WFO']].drop_duplicates()
+    wfo_data.columns = ['wfo']
+    wfo_data.to_sql('dim_wfo', conn, if_exists='append', index=False)
 
     population_density_data = storm_details_filtered[['population_density']].drop_duplicates()
     population_density_data.columns = ['density']
