@@ -1,7 +1,11 @@
 import os
+
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, Float, String, ForeignKey
-import pandas as pd
+
+from extract.extract import load_and_clean_storm_details_data, load_and_clean_density_data
+from transform.transform import transform_damage_property_to_number, \
+    transform_group_damage_property, transform_group_magnitude, transform_lookup_population_density
 
 # Load environment variables
 load_dotenv()
@@ -10,69 +14,21 @@ load_dotenv()
 db_name = os.getenv("DB_NAME")
 
 # Create a connection string
-CONNECTION_STRING = f"mssql+pyodbc://@{db_name}/hurtownie_projekt?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
+CONNECTION_STRING = f"mssql+pyodbc://@{db_name}/StormEvents?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
 
 # Create a SQLAlchemy engine
 engine = create_engine(CONNECTION_STRING)
 
-# Define functions to load and clean data
-def load_and_clean_data(file_path):
-    df = pd.read_csv(file_path)
-    df.drop_duplicates(inplace=True)
-    return df
-
-
-def map_damage_property(damage_property: object):
-    damage_property = str(damage_property)
-    if pd.isnull(damage_property):
-        return 0
-    elif 'K' in damage_property:
-        damage_property = damage_property[:-1].strip()
-        return float(damage_property) * 1000 if damage_property.isdigit() else 0.0
-    elif 'M' in damage_property:
-        damage_property = damage_property[:-1].strip()
-        return float(damage_property) * 1000000 if damage_property.isdigit() else 0.0
-    else:
-        damage_property = damage_property[:-1].strip()
-        return float(damage_property) if damage_property.isdigit() else 0.0
-
-
-def magnitude_group(magnitude):
-    if pd.isnull(magnitude) or magnitude == 0.0 or type(magnitude) is str:
-        return 'brak'
-    elif magnitude < 1.0:
-        return 'słaby'
-    elif 1.0 <= magnitude < 3.0:
-        return 'średni'
-    elif 3.0 <= magnitude < 5.0:
-        return 'silny'
-    else:
-        return 'ekstremalny'
-
-
-def damage_group(damage_property):
-    if pd.isnull(damage_property) or damage_property == 0:
-        return 'brak'
-    if damage_property < 1000:
-        return 'niskie'
-    elif 1000 <= damage_property < 10000:
-        return 'umiarkowane'
-    elif 10000 <= damage_property < 100000:
-        return 'wysokie'
-    else:
-        return 'ekstremalne'
-
-
 # Load data
-storm_details_data = load_and_clean_data('data/details.csv')
-population_density_data = load_and_clean_data('data/density.csv')
+storm_details_data = load_and_clean_storm_details_data()
+population_density_data = load_and_clean_density_data()
 
 # Map DAMAGE_PROPERTY to float
-storm_details_data['DAMAGE_PROPERTY'] = storm_details_data['DAMAGE_PROPERTY'].apply(map_damage_property)
+storm_details_data['DAMAGE_PROPERTY'] = storm_details_data['DAMAGE_PROPERTY'].apply(transform_damage_property_to_number)
 
 # Apply grouping functions
-storm_details_data['magnitude_group'] = storm_details_data['MAGNITUDE'].apply(magnitude_group)
-storm_details_data['damage_group'] = storm_details_data['DAMAGE_PROPERTY'].apply(damage_group)
+storm_details_data['magnitude_group'] = storm_details_data['MAGNITUDE'].apply(transform_group_magnitude)
+storm_details_data['damage_group'] = storm_details_data['DAMAGE_PROPERTY'].apply(transform_group_damage_property)
 
 # Ensure all necessary columns are included
 required_columns = [
@@ -83,6 +39,8 @@ required_columns = [
 
 # Filter columns to match the database schema using .loc to avoid copy issues
 storm_details_filtered = storm_details_data.loc[:, required_columns]
+population_density_data = population_density_data.drop("Unnamed: 0", axis='columns')
+population_density_data['state'] = population_density_data['state'].apply(str.upper)
 
 # Create additional required columns
 storm_details_filtered['injuries_total'] = storm_details_filtered['INJURIES_DIRECT'] + storm_details_filtered[
@@ -91,14 +49,10 @@ storm_details_filtered['deaths_total'] = storm_details_filtered['DEATHS_DIRECT']
     'DEATHS_INDIRECT']
 
 # Prepare population density mapping
-population_density_dict = population_density_data.set_index(['state', 'year'])['density'].to_dict()
+population_density_dict = population_density_data.set_index(['state', 'year']).to_dict(orient='index')
 
-
-def get_population_density(row):
-    return population_density_dict.get((row['STATE'], row['YEAR']), None)
-
-
-storm_details_filtered['population_density'] = storm_details_filtered.apply(get_population_density, axis=1)
+storm_details_filtered['population_density'] = storm_details_filtered.apply(
+    transform_lookup_population_density(population_density_dict), axis=1)
 
 # # Drop rows with missing required data
 # storm_details_filtered.dropna(subset=[
@@ -204,9 +158,9 @@ with engine.connect() as conn:
     # wfo_data.columns = ['wfo']
     # wfo_data.to_sql('dim_wfo', conn, if_exists='append', index=False)
 
-    # population_density_data = storm_details_filtered[['population_density']].drop_duplicates()
-    # population_density_data.columns = ['density']
-    # population_density_data.to_sql('dim_population_density', conn, if_exists='append', index=False)
+    population_density_data = storm_details_filtered[['population_density']].drop_duplicates()
+    population_density_data.columns = ['density']
+    population_density_data.to_sql('dim_population_density', conn, if_exists='append', index=False)
 
     # # Insert into fact table
     # fact_event_data = storm_details_filtered[[
