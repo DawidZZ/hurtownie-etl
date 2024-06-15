@@ -17,17 +17,42 @@ def transform_damage_property_to_number(damage_property: object):
         return float(damage_property) if damage_property.isdigit() else 0.0
 
 
-def create_group_magnitude(magnitude):
-    if pd.isnull(magnitude) or magnitude == 0.0 or type(magnitude) is str:
-        return 'brak'
-    elif magnitude < 1.0:
-        return 'słaby'
-    elif 1.0 <= magnitude < 3.0:
-        return 'średni'
-    elif 3.0 <= magnitude < 5.0:
-        return 'silny'
+def create_group_magnitude(data):
+    magnitude = data['MAGNITUDE']
+    magnitude_type = data['MAGNITUDE_TYPE']
+
+    if pd.isnull(magnitude):
+        return 'nie dotyczy'
+    elif pd.isnull(magnitude_type):
+        return 'grad'
     else:
-        return 'ekstremalny'
+        #skala Beauforta
+        if magnitude <= 0.2:
+            return 'Cisza'
+        elif 0.3 <= magnitude <= 1.5:
+            return 'Powiew'
+        elif 1.6 <= magnitude <= 3.3:
+            return 'Słaby wiatr'
+        elif 3.4 <= magnitude <= 5.4:
+            return 'Łagodny wiatr'
+        elif 5.5 <= magnitude <= 7.9:
+            return 'Umiarkowany wiatr'
+        elif 8.0 <= magnitude <= 10.7:
+            return 'Dość silny wiatr'
+        elif 10.8 <= magnitude <= 13.8:
+            return 'Silny wiatr'
+        elif 13.9 <= magnitude <= 17.1:
+            return 'Bardzo silny wiatr'
+        elif 17.2 <= magnitude <= 20.7:
+            return 'Sztorm'
+        elif 20.8 <= magnitude <= 24.4:
+            return 'Silny sztorm'
+        elif 24.5 <= magnitude <= 28.4:
+            return 'Bardzo silny sztorm'
+        elif 28.5 <= magnitude <= 32.6:
+            return 'Gwałtowny sztorm'
+        else:
+            return 'Huragan'
 
 
 def create_group_damage_property(damage_property):
@@ -119,7 +144,7 @@ def transform_columns_data(data):
 
 
 def create_derived_columns(data):
-    data['magnitude_group'] = data['MAGNITUDE'].apply(create_group_magnitude)
+    data['magnitude_group'] = data.apply(create_group_magnitude, axis=1)
     data['damage_group'] = data['DAMAGE_PROPERTY'].apply(create_group_damage_property)
     data['duration'] = data.apply(create_duration, axis=1)
     data['injuries_total'] = data['INJURIES_DIRECT'] + data['INJURIES_INDIRECT']
