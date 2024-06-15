@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
 from extract.extract import extract_and_clean_storm_details_data, extract_and_clean_density_data
-from load.load import load_data_to_temp_dim_tables
+from load.load import load_data_to_temp_dim_tables, load_data_to_temp_fact_table
 from transform.transform import fill_missing_values, insert_population_density_to_main_dataset, drop_unused_columns, transform_columns_data, create_derived_columns
 from load.database import create_tmp_tables, drop_tmp_tables
 
@@ -37,8 +37,8 @@ def main():
 
     drop_tmp_tables(engine)
     create_tmp_tables(engine)
-    load_data_to_temp_dim_tables(engine, data)
-    # load_data_to_temp_fact_table(engine, data)
+    load_data_to_temp_dim_tables(engine, data, 'append')
+    load_data_to_temp_fact_table(engine, data)
 
 
 if __name__ == "__main__":

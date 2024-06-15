@@ -60,6 +60,7 @@ fact_event = Table('tmp_fact_event', tmp_metadata,
                    Column('damage_property', Float),
                    Column('year', Integer),
                    Column('month', Integer),
+                   Column('month_name', String(12)),
                    Column('day', Integer),
                    Column('quarter', Integer),
                    # dim_location

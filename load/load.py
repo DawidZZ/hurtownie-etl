@@ -1,4 +1,4 @@
-def load_data_to_temp_dim_tables(engine, data, strategy='replace'):
+def load_data_to_temp_dim_tables(engine, data, strategy='append'):
     with engine.connect() as conn:
         time_data = data[['YEAR', 'MONTH', 'BEGIN_DAY']].drop_duplicates()
         time_data.columns = ['year', 'month', 'day']
@@ -32,13 +32,15 @@ def load_data_to_temp_dim_tables(engine, data, strategy='replace'):
         conn.close()
 
 
-def load_data_to_temp_fact_table(engine, data, strategy='replace'):
-    data.columns = ['year', 'month', 'day', 'state', 'cz_name', 'lat', 'lon', 'source', 'flood_cause', 'event_type',
+def load_data_to_temp_fact_table(engine, data, strategy='append'):
+    print(data.columns)
+    data = data.drop(['BEGIN_YEARMONTH','END_YEARMONTH', 'END_DAY'],axis='columns')
+    data.columns = ['year', 'month', 'month_name', 'day', 'state', 'cz_name', 'lat', 'lon', 'source', 'flood_cause', 'event_type',
                     'wfo', 'injuries_direct',
                     'injuries_indirect', 'deaths_direct', 'deaths_indirect', 'magnitude', 'injuries_total',
                     'deaths_total',
                     'magnitude_group', 'damage_group', 'damage_property',
-                    'population_density']
+                    'density','duration']
     with engine.connect() as conn:
         print(data.shape)
         data.to_sql('tmp_fact_event', conn, if_exists=strategy, index=False)
