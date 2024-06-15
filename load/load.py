@@ -1,24 +1,32 @@
-import os
-
-from dotenv import load_dotenv
-from sqlalchemy import create_engine, inspect, text
-
-# Load environment variables
-load_dotenv()
-
-# Get database name from environment variables
-db_name = os.getenv("DB_NAME")
-engine = create_engine(f"mssql+pyodbc://@{db_name}/StormEvents?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes")
-# Create an inspector object
-inspector = inspect(engine)
-
-
-def delete_from_dim_tables():
-    table_names = filter(lambda name: name != 'tmp_details' and name != 'tmp_fact_event' and name != 'fact_event', inspector.get_table_names())
-
+def load_data_to_temp_dim_tables(engine, data, strategy='replace'):
     with engine.connect() as conn:
-        for table_name in table_names:
-            print(table_name)
-            str = "DELETE FROM " + table_name
-            conn.execute(text(str))
-        conn.commit()
+        time_data = data[['YEAR', 'BEGIN_YEARMONTH', 'BEGIN_DAY']].drop_duplicates()
+        time_data.columns = ['year', 'month', 'day']
+        time_data['quarter'] = ((time_data['month'] - 1) // 3) + 1
+        time_data.to_sql('tmp_dim_time', conn, if_exists=strategy, index=False)
+
+        location_data = data[['STATE', 'CZ_NAME', 'BEGIN_LAT', 'BEGIN_LON']].drop_duplicates()
+        location_data.columns = ['state', 'cz_name', 'lat', 'lon']
+        location_data.to_sql('tmp_dim_location', conn, if_exists=strategy, index=False)
+
+        source_data = data[['SOURCE']].drop_duplicates()
+        source_data.columns = ['source']
+        source_data.to_sql('tmp_dim_source', conn, if_exists=strategy, index=False)
+
+        flood_cause_data = data[['FLOOD_CAUSE']].drop_duplicates()
+        flood_cause_data.columns = ['flood_cause']
+        flood_cause_data.to_sql('tmp_dim_flood_cause', conn, if_exists=strategy, index=False)
+
+        event_type_data = data[['EVENT_TYPE']].drop_duplicates()
+        event_type_data.columns = ['event_type']
+        event_type_data.to_sql('tmp_dim_event_type', conn, if_exists=strategy, index=False)
+
+        wfo_data = data[['WFO']].drop_duplicates()
+        wfo_data.columns = ['wfo']
+        wfo_data.to_sql('tmp_dim_wfo', conn, if_exists=strategy, index=False)
+
+        population_density_data = data[['population_density']].drop_duplicates()
+        population_density_data.columns = ['density']
+        population_density_data.to_sql('tmp_dim_population_density', conn, if_exists=strategy, index=False)
+        
+        conn.close()
