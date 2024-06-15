@@ -14,7 +14,7 @@ load_dotenv()
 db_name = os.getenv("DB_NAME")
 
 # Create a connection string
-CONNECTION_STRING = f"mssql+pyodbc://@{db_name}/StormEvents?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
+CONNECTION_STRING = f"mssql+pyodbc://@{db_name}/hurtownie_projekt?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
 
 # Create a SQLAlchemy engine
 engine = create_engine(CONNECTION_STRING)
