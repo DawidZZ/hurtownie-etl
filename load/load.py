@@ -1,6 +1,6 @@
 def load_data_to_temp_dim_tables(engine, data, strategy='replace'):
     with engine.connect() as conn:
-        time_data = data[['YEAR', 'BEGIN_YEARMONTH', 'BEGIN_DAY']].drop_duplicates()
+        time_data = data[['YEAR', 'MONTH', 'BEGIN_DAY']].drop_duplicates()
         time_data.columns = ['year', 'month', 'day']
         time_data['quarter'] = ((time_data['month'] - 1) // 3) + 1
         time_data.to_sql('tmp_dim_time', conn, if_exists=strategy, index=False)

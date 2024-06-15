@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from datetime import datetime
 
 def transform_damage_property_to_number(damage_property: object):
     damage_property = str(damage_property)
@@ -41,6 +42,16 @@ def create_group_damage_property(damage_property):
     else:
         return 'ekstremalne'
 
+def to_datetime(yearmonth, day):
+    year = yearmonth // 100
+    month = yearmonth % 100
+    return datetime(year, month, day)
+
+def create_duration(row):
+    begin_date = to_datetime(row['BEGIN_YEARMONTH'], row['BEGIN_DAY'])
+    end_date = to_datetime(row['END_YEARMONTH'], row['END_DAY'])
+    return (end_date - begin_date).days
+
 def transform_lookup_population_density(population_density_dict):
     def transform(row):
         year = find_nearest(range(1990, 2020, 10), row['YEAR'])
@@ -60,6 +71,39 @@ def find_nearest(array, value):
     return array[idx]
 
 
+def fill_lat(data):
+    county_lat = data.groupby('CZ_NAME')['BEGIN_LAT'].first().to_dict()
+    state_lat = data.groupby('STATE')['BEGIN_LAT'].first().to_dict()
+    
+    def get_lat(row):
+        if pd.notnull(row['BEGIN_LAT']):
+            return row['BEGIN_LAT']
+        elif row['CZ_NAME'] in county_lat and pd.notnull(county_lat[row['CZ_NAME']]):
+            return county_lat[row['CZ_NAME']]
+        elif row['STATE'] in state_lat and pd.notnull(state_lat[row['STATE']]):
+            return state_lat[row['STATE']]
+        else:
+            return np.nan
+    
+    return get_lat
+
+def fill_lon(data):
+    county_lon = data.groupby('CZ_NAME')['BEGIN_LON'].first().to_dict()
+    state_lon = data.groupby('STATE')['BEGIN_LON'].first().to_dict()
+    
+    def get_lon(row):
+        if pd.notnull(row['BEGIN_LON']):
+            return row['BEGIN_LON']
+        elif row['CZ_NAME'] in county_lon and pd.notnull(county_lon[row['CZ_NAME']]):
+            return county_lon[row['CZ_NAME']]
+        elif row['STATE'] in state_lon and pd.notnull(state_lon[row['STATE']]):
+            return state_lon[row['STATE']]
+        else:
+            return np.nan
+    
+    return get_lon
+
+
 def insert_population_density_to_main_dataset(data, population_density_data):
     population_density_data = population_density_data.drop("Unnamed: 0", axis='columns')
     population_density_data['state'] = population_density_data['state'].apply(str.upper)
@@ -71,18 +115,25 @@ def insert_population_density_to_main_dataset(data, population_density_data):
 
 def transform_columns_data(data):
     data['DAMAGE_PROPERTY'] = data['DAMAGE_PROPERTY'].apply(transform_damage_property_to_number)
-    data['BEGIN_YEARMONTH'] = data['BEGIN_YEARMONTH'].apply(transform_get_month_from_yearmonth)
     return data
 
 
 def create_derived_columns(data):
     data['magnitude_group'] = data['MAGNITUDE'].apply(create_group_magnitude)
     data['damage_group'] = data['DAMAGE_PROPERTY'].apply(create_group_damage_property)
+    data['duration'] = data.apply(create_duration, axis=1)
     data['injuries_total'] = data['INJURIES_DIRECT'] + data['INJURIES_INDIRECT']
     data['deaths_total'] = data['DEATHS_DIRECT'] + data['DEATHS_INDIRECT']
+    data['MONTH'] = data['BEGIN_YEARMONTH'].apply(transform_get_month_from_yearmonth)
+    
     return data
 
 
 def drop_unused_columns(data, required_columns):
     return data.loc[:, required_columns]
     
+
+def fill_missing_values(data):
+    data['BEGIN_LAT'] = data.apply(fill_lat(data), axis=1)
+    data['BEGIN_LON'] = data.apply(fill_lon(data), axis=1)
+    return data

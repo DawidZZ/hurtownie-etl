@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 
 from extract.extract import extract_and_clean_storm_details_data, extract_and_clean_density_data
 from load.load import load_data_to_temp_dim_tables
-from transform.transform import insert_population_density_to_main_dataset, drop_unused_columns, transform_columns_data, create_derived_columns
+from transform.transform import fill_missing_values, insert_population_density_to_main_dataset, drop_unused_columns, transform_columns_data, create_derived_columns
 from load.database import create_tmp_tables, drop_tmp_tables
 
 load_dotenv()
@@ -13,11 +13,11 @@ db_name = os.getenv("DB_NAME")
 CONNECTION_STRING = f"mssql+pyodbc://@{db_name}/hurtownie_projekt?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
 
 
-required_columns = [
-    'YEAR', 'BEGIN_YEARMONTH', 'BEGIN_DAY', 'STATE', 'CZ_NAME', 'BEGIN_LAT', 'BEGIN_LON',
+allowed_columns = [
+    'YEAR', 'MONTH', 'MONTH_NAME', 'BEGIN_YEARMONTH', 'BEGIN_DAY', 'END_YEARMONTH', 'END_DAY', 'STATE', 'CZ_NAME', 'BEGIN_LAT', 'BEGIN_LON',
     'SOURCE', 'FLOOD_CAUSE', 'EVENT_TYPE', 'WFO', 'INJURIES_DIRECT', 'INJURIES_INDIRECT',
     'DEATHS_DIRECT', 'DEATHS_INDIRECT', 'MAGNITUDE', 'injuries_total', 'deaths_total', 'magnitude_group', 
-    'damage_group', 'DAMAGE_PROPERTY', 'population_density'
+    'damage_group', 'DAMAGE_PROPERTY', 'population_density', 'duration'
 ]
 
 def main():
@@ -29,7 +29,8 @@ def main():
     data = insert_population_density_to_main_dataset(storm_details_data, population_density_data)
     data = transform_columns_data(data)
     data = create_derived_columns(data)
-    data = drop_unused_columns(data, required_columns)
+    data = fill_missing_values(data)
+    data = drop_unused_columns(data, allowed_columns)
     
     print(data.head())
     
