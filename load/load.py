@@ -28,5 +28,19 @@ def load_data_to_temp_dim_tables(engine, data, strategy='replace'):
         population_density_data = data[['population_density']].drop_duplicates()
         population_density_data.columns = ['density']
         population_density_data.to_sql('tmp_dim_population_density', conn, if_exists=strategy, index=False)
-        
+
+        conn.close()
+
+
+def load_data_to_temp_fact_table(engine, data, strategy='replace'):
+    data.columns = ['year', 'month', 'day', 'state', 'cz_name', 'lat', 'lon', 'source', 'flood_cause', 'event_type',
+                    'wfo', 'injuries_direct',
+                    'injuries_indirect', 'deaths_direct', 'deaths_indirect', 'magnitude', 'injuries_total',
+                    'deaths_total',
+                    'magnitude_group', 'damage_group', 'damage_property',
+                    'population_density']
+    with engine.connect() as conn:
+        print(data.shape)
+        data.to_sql('tmp_fact_event', conn, if_exists=strategy, index=False)
+
         conn.close()
