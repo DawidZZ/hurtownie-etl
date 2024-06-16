@@ -44,8 +44,6 @@ def load_data_to_dim_tables(engine, data, strategy='append'):
 
 
 def load_data_to_temp_fact_table(engine, data, strategy='append'):
-    data = data.drop(['BEGIN_YEARMONTH', 'END_YEARMONTH',
-                     'END_DAY'], axis='columns')
     data.columns = ['year', 'quarter', 'month', 'month_name', 'day', 'state', 'cz_name', 'lat', 'lon', 'source', 'flood_cause', 'event_type',
                     'wfo', 'injuries_direct',
                     'injuries_indirect', 'deaths_direct', 'deaths_indirect', 'magnitude', 'injuries_total',

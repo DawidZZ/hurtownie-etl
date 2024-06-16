@@ -19,16 +19,16 @@ allowed_source_columns_storm = ['YEAR', 'MONTH_NAME', 'BEGIN_YEARMONTH', 'BEGIN_
 allowed_source_columns_density = ['state', 'year', 'density']
 
 allowed_columns = [
-    'YEAR', 'QUARTER', 'MONTH', 'MONTH_NAME', 'BEGIN_YEARMONTH', 'BEGIN_DAY',
-    'END_YEARMONTH', 'END_DAY', 'STATE', 'CZ_NAME', 'BEGIN_LAT', 'BEGIN_LON',
+    'YEAR', 'QUARTER', 'MONTH', 'MONTH_NAME', 'BEGIN_DAY',
+      'STATE', 'CZ_NAME', 'BEGIN_LAT', 'BEGIN_LON',
     'SOURCE', 'FLOOD_CAUSE', 'EVENT_TYPE', 'WFO', 'INJURIES_DIRECT', 'INJURIES_INDIRECT',
     'DEATHS_DIRECT', 'DEATHS_INDIRECT', 'MAGNITUDE', 'injuries_total', 'deaths_total', 'magnitude_group',
     'damage_group', 'DAMAGE_PROPERTY', 'population_density', 'duration'
 ]
 
 required_columns = [
-    'YEAR', 'QUARTER', 'MONTH', 'MONTH_NAME', 'BEGIN_YEARMONTH', 'BEGIN_DAY', 'END_YEARMONTH',
-    'END_DAY', 'STATE', 'CZ_NAME', 'BEGIN_LAT', 'BEGIN_LON', 'EVENT_TYPE', 'WFO', 'INJURIES_DIRECT',
+    'YEAR', 'QUARTER', 'MONTH', 'MONTH_NAME',  'BEGIN_DAY',
+    'STATE', 'CZ_NAME', 'BEGIN_LAT', 'BEGIN_LON', 'EVENT_TYPE', 'WFO', 'INJURIES_DIRECT',
     'INJURIES_INDIRECT', 'DEATHS_DIRECT', 'DEATHS_INDIRECT', 'injuries_total', 'deaths_total', 'magnitude_group', 'damage_group', 'DAMAGE_PROPERTY', 'duration'
 ]
 
