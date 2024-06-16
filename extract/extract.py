@@ -12,11 +12,8 @@ storm_details_dtype = {
     'BEGIN_DAY': 'int64',
     'END_YEARMONTH': 'int64',
     'END_DAY': 'int64',
-    'STATE': 'str',
-    'CZ_NAME': 'str',
     'BEGIN_LAT': 'float64',
     'BEGIN_LON': 'float64',
-    'SOURCE': 'str',
     'FLOOD_CAUSE': 'str',
     'EVENT_TYPE': 'str',
     'WFO': 'str',
@@ -29,7 +26,10 @@ storm_details_dtype = {
 }
 
 storm_details_converters = {
-    'DAMAGE_PROPERTY': transform_damage_property_to_number
+    'DAMAGE_PROPERTY': transform_damage_property_to_number,
+    'SOURCE': lambda x: x.lower().strip(),
+    'CZ_NAME': lambda x: x.lower().strip(),
+    'STATE': lambda x: x.upper().strip(),
 }
 
 population_density_dtype = {
