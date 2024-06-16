@@ -4,25 +4,26 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
 from extract.extract import extract_and_clean_storm_details_data, extract_and_clean_density_data
-from load.load import load_data_to_temp_dim_tables, load_data_to_temp_fact_table
-from transform.transform import fill_missing_values, insert_population_density_to_main_dataset, drop_unused_columns, transform_columns_data, create_derived_columns
 from load.database import create_tmp_tables, drop_tmp_tables
+from load.load import load_data_to_dim_tables, load_data_to_temp_fact_table
+from transform.transform import fill_missing_values, insert_population_density_to_main_dataset, drop_unused_columns, \
+    transform_columns_data, create_derived_columns
 
 load_dotenv()
 db_name = os.getenv("DB_NAME")
 CONNECTION_STRING = f"mssql+pyodbc://@{db_name}/hurtownie_projekt?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
 
-
 allowed_columns = [
-    'YEAR', 'MONTH', 'MONTH_NAME', 'BEGIN_YEARMONTH', 'BEGIN_DAY', 'END_YEARMONTH', 'END_DAY', 'STATE', 'CZ_NAME', 'BEGIN_LAT', 'BEGIN_LON',
+    'YEAR', 'MONTH', 'MONTH_NAME', 'BEGIN_YEARMONTH', 'BEGIN_DAY', 'END_YEARMONTH', 'END_DAY', 'STATE', 'CZ_NAME',
+    'BEGIN_LAT', 'BEGIN_LON',
     'SOURCE', 'FLOOD_CAUSE', 'EVENT_TYPE', 'WFO', 'INJURIES_DIRECT', 'INJURIES_INDIRECT',
-    'DEATHS_DIRECT', 'DEATHS_INDIRECT', 'MAGNITUDE', 'injuries_total', 'deaths_total', 'magnitude_group', 
+    'DEATHS_DIRECT', 'DEATHS_INDIRECT', 'MAGNITUDE', 'injuries_total', 'deaths_total', 'magnitude_group',
     'damage_group', 'DAMAGE_PROPERTY', 'population_density', 'duration'
 ]
 
 
 def main():
-    engine = create_engine(CONNECTION_STRING)
+    engine = create_engine(CONNECTION_STRING, fast_executemany=True)
 
     storm_details_data = extract_and_clean_storm_details_data()
     population_density_data = extract_and_clean_density_data()
@@ -32,20 +33,16 @@ def main():
     data = create_derived_columns(data)
     data = fill_missing_values(data)
     data = drop_unused_columns(data, allowed_columns)
-    
+
     print(data.head())
 
     drop_tmp_tables(engine)
     create_tmp_tables(engine)
-    load_data_to_temp_dim_tables(engine, data, 'append')
-    load_data_to_temp_fact_table(engine, data)
-
+    load_data_to_dim_tables(engine, data, 'append')
+    load_data_to_temp_fact_table(engine, data, 'append')
 
 if __name__ == "__main__":
     main()
-
-# Load data into database
-
 
 # # Insert into fact table
 # fact_event_data = storm_details_filtered[[
