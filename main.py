@@ -6,59 +6,68 @@ from sqlalchemy import create_engine
 from extract.extract import extract_and_clean_storm_details_data, extract_and_clean_density_data
 from load.database import create_tmp_tables, drop_tmp_tables
 from load.load import load_data_to_dim_tables, load_data_to_temp_fact_table
-from transform.transform import fill_missing_values, insert_population_density_to_main_dataset, drop_unused_columns, \
-    transform_columns_data, create_derived_columns
+from transform.transform import drop_invalid_rows, drop_rows_with_missing_values, fill_missing_values, insert_population_density_to_main_dataset, drop_unused_columns, create_derived_columns
+import pandas as pd
 
 load_dotenv()
 db_name = os.getenv("DB_NAME")
 CONNECTION_STRING = f"mssql+pyodbc://@{db_name}/hurtownie_projekt?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
 
+allowed_source_columns_storm = ['YEAR', 'MONTH_NAME', 'BEGIN_YEARMONTH', 'BEGIN_DAY', 'END_YEARMONTH', 'END_DAY', 'STATE', 'CZ_NAME', 'BEGIN_LAT', 'BEGIN_LON',
+                                'SOURCE', 'FLOOD_CAUSE', 'EVENT_TYPE', 'WFO', 'INJURIES_DIRECT', 'INJURIES_INDIRECT', 'DEATHS_DIRECT', 'DEATHS_INDIRECT', 'MAGNITUDE', 'MAGNITUDE_TYPE', 'DAMAGE_PROPERTY']
+
+allowed_source_columns_density = ['state', 'year', 'density']
+
 allowed_columns = [
-    'YEAR', 'QUARTER', 'MONTH', 'MONTH_NAME', 'BEGIN_YEARMONTH', 'BEGIN_DAY', 'END_YEARMONTH', 'END_DAY', 'STATE', 'CZ_NAME', 'BEGIN_LAT', 'BEGIN_LON',
+    'YEAR', 'QUARTER', 'MONTH', 'MONTH_NAME', 'BEGIN_YEARMONTH', 'BEGIN_DAY',
+    'END_YEARMONTH', 'END_DAY', 'STATE', 'CZ_NAME', 'BEGIN_LAT', 'BEGIN_LON',
     'SOURCE', 'FLOOD_CAUSE', 'EVENT_TYPE', 'WFO', 'INJURIES_DIRECT', 'INJURIES_INDIRECT',
     'DEATHS_DIRECT', 'DEATHS_INDIRECT', 'MAGNITUDE', 'injuries_total', 'deaths_total', 'magnitude_group',
     'damage_group', 'DAMAGE_PROPERTY', 'population_density', 'duration'
 ]
 
+required_columns = [
+    'YEAR', 'QUARTER', 'MONTH', 'MONTH_NAME', 'BEGIN_YEARMONTH', 'BEGIN_DAY', 'END_YEARMONTH',
+    'END_DAY', 'STATE', 'CZ_NAME', 'BEGIN_LAT', 'BEGIN_LON', 'EVENT_TYPE', 'WFO', 'INJURIES_DIRECT',
+    'INJURIES_INDIRECT', 'DEATHS_DIRECT', 'DEATHS_INDIRECT', 'injuries_total', 'deaths_total', 'magnitude_group', 'damage_group', 'DAMAGE_PROPERTY', 'duration'
+]
+
+
+def null_ratios(df):
+    null_counts = df.isnull().sum()
+    total_counts = len(df)
+    null_percentages = (null_counts / total_counts) * 100
+    null_ratios_df = pd.DataFrame({
+        'null_count': null_counts,
+        'null_percentage': null_percentages
+    })
+    return null_ratios_df
+
 
 def main():
     engine = create_engine(CONNECTION_STRING, fast_executemany=True)
 
-    storm_details_data = extract_and_clean_storm_details_data()
-    population_density_data = extract_and_clean_density_data()
+    storm_details_data = extract_and_clean_storm_details_data(
+        allowed_source_columns_storm)
+    population_density_data = extract_and_clean_density_data(
+        allowed_source_columns_density)
 
-    data = insert_population_density_to_main_dataset(storm_details_data, population_density_data)
-    data = transform_columns_data(data)
+    data = insert_population_density_to_main_dataset(
+        storm_details_data, population_density_data)
     data = create_derived_columns(data)
     data = fill_missing_values(data)
+    data = drop_invalid_rows(data)
     data = drop_unused_columns(data, allowed_columns)
+    data = drop_rows_with_missing_values(data, required_columns)
 
     print(data.head())
+    print(null_ratios(data))
 
     drop_tmp_tables(engine)
     create_tmp_tables(engine)
     load_data_to_dim_tables(engine, data, 'append')
     load_data_to_temp_fact_table(engine, data, 'append')
 
+
 if __name__ == "__main__":
     main()
-
-# # Insert into fact table
-# fact_event_data = storm_details_filtered[[
-#     'INJURIES_DIRECT', 'INJURIES_INDIRECT', 'injuries_total', 'DEATHS_DIRECT', 'DEATHS_INDIRECT', 'deaths_total',
-#     'MAGNITUDE', 'magnitude_group', 'damage_group', 'DAMAGE_PROPERTY'
-# ]]
-# fact_event_data.columns = [
-#     'injuries_direct', 'injuries_indirect', 'injuries_total', 'deaths_direct', 'deaths_indirect', 'deaths_total',
-#     'magnitude', 'magnitude_group', 'damage_group', 'damage_property'
-# ]
-# # Add foreign keys
-# fact_event_data['time_id'] = time_data.index + 1
-# fact_event_data['location_id'] = location_data.index + 1
-# fact_event_data['source_id'] = source_data.index + 1
-# fact_event_data['flood_cause_id'] = flood_cause_data.index + 1
-# fact_event_data['event_type_id'] = event_type_data.index + 1
-# fact_event_data['wfo_id'] = wfo_data.index + 1
-# fact_event_data['population_density_id'] = population_density_data.index + 1
-
-# fact_event_data.to_sql('fact_event', conn, if_exists='append', index=False)
