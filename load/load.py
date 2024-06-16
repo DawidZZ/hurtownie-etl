@@ -4,8 +4,8 @@ from sqlalchemy import text
 def load_data_to_dim_tables(engine, data, strategy='append'):
     with engine.connect() as conn:
         time_data = data[['YEAR', 'QUARTER',
-                          'MONTH', 'BEGIN_DAY']].drop_duplicates()
-        time_data.columns = ['year', 'quarter', 'month', 'day']
+                          'MONTH','MONTH_NAME', 'BEGIN_DAY']].drop_duplicates()
+        time_data.columns = ['year', 'quarter', 'month', 'month_name', 'day']
         time_data.to_sql('tmp_dim_time', conn,
                          if_exists=strategy, index=False, chunksize=1000)
 
@@ -63,8 +63,8 @@ def load_data_to_destination_tables(engine):
     with engine.connect() as conn:
         # Wczytywanie danych do tabeli docelowej dim_time
         insert_dim_time = text("""
-        INSERT INTO dim_time (year, month, day, quarter)
-        SELECT tmp.year, tmp.month, tmp.day, tmp.quarter
+        INSERT INTO dim_time (year, month, month_name, day, quarter)
+        SELECT tmp.year, tmp.month, tmp.month_name, tmp.day, tmp.quarter
         FROM tmp_dim_time tmp
         LEFT JOIN dim_time dt
         ON tmp.year = dt.year AND tmp.month = dt.month AND tmp.day = dt.day AND tmp.quarter = dt.quarter
@@ -177,12 +177,17 @@ def load_data_to_destination_tables(engine):
             dim_wfo dw ON tfe.wfo = dw.wfo
         LEFT JOIN 
             dim_population_density dpd ON tfe.density = dpd.density
-        WHERE 
-            (dt.id, dl.id, ds.id, dfc.id, det.id, dw.id, dpd.id) NOT IN (
-                SELECT 
-                    fe.time_id, fe.location_id, fe.source_id,
-                    fe.flood_cause_id, fe.event_type_id, fe.wfo_id, fe.population_density_id
+        WHERE NOT EXISTS
+             (
+                SELECT fe.id
                 FROM fact_event fe
+				WHERE dt.id = fe.time_id
+				AND dl.id = fe.location_id
+				AND (fe.source_id IS NULL OR ds.id = fe.source_id)
+				AND (fe.flood_cause_id IS NULL OR dfc.id = fe.flood_cause_id)
+				AND det.id = fe.event_type_id
+				AND dw.id = fe.wfo_id
+				AND dpd.id = fe.population_density_id
             );
         """)
         conn.execute(insert_fact_event)

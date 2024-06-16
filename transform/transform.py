@@ -88,7 +88,7 @@ def to_datetime(yearmonth, day):
 def create_duration(row):
     begin_date = to_datetime(row['BEGIN_YEARMONTH'], row['BEGIN_DAY'])
     end_date = to_datetime(row['END_YEARMONTH'], row['END_DAY'])
-    return (end_date - begin_date).days
+    return (end_date - begin_date).days + 1
 
 
 def transform_lookup_population_density(population_density_dict):

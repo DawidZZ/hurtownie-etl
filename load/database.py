@@ -7,6 +7,7 @@ tmp_dim_time = Table('tmp_dim_time', tmp_metadata,
                      Column('id', Integer, autoincrement=True, primary_key=True),
                      Column('year', Integer),
                      Column('month', Integer),
+                     Column('month_name', String(12)),
                      Column('day', Integer),
                      Column('quarter', Integer)
                      )
@@ -83,6 +84,7 @@ dim_time = Table('dim_time', metadata,
                  Column('id', Integer, autoincrement=True, primary_key=True),
                  Column('year', Integer),
                  Column('month', Integer),
+                 Column('month_name', String(12)),
                  Column('day', Integer),
                  Column('quarter', Integer)
                  )
