@@ -150,6 +150,7 @@ def create_derived_columns(data):
     data['injuries_total'] = data['INJURIES_DIRECT'] + data['INJURIES_INDIRECT']
     data['deaths_total'] = data['DEATHS_DIRECT'] + data['DEATHS_INDIRECT']
     data['MONTH'] = data['BEGIN_YEARMONTH'].apply(transform_get_month_from_yearmonth)
+    data['QUARTER'] = ((data['MONTH'] - 1) // 3) + 1
     
     return data
 
