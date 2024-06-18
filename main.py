@@ -13,7 +13,7 @@ import pandas as pd
 
 load_dotenv()
 db_name = os.getenv("DB_NAME")
-CONNECTION_STRING = f"mssql+pyodbc://@{db_name}/hurtownie_projekt?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
+CONNECTION_STRING = f"mssql+pyodbc://@{db_name}/hurtownie_test?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
 
 allowed_source_columns_storm = ['YEAR', 'MONTH_NAME', 'BEGIN_YEARMONTH', 'BEGIN_DAY', 'END_YEARMONTH', 'END_DAY', 'STATE', 'CZ_NAME', 'BEGIN_LAT', 'BEGIN_LON',
                                 'SOURCE', 'FLOOD_CAUSE', 'EVENT_TYPE', 'WFO', 'INJURIES_DIRECT', 'INJURIES_INDIRECT', 'DEATHS_DIRECT', 'DEATHS_INDIRECT', 'MAGNITUDE', 'MAGNITUDE_TYPE', 'DAMAGE_PROPERTY']

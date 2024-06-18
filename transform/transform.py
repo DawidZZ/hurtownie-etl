@@ -76,19 +76,27 @@ def to_datetime(yearmonth, day):
 
 
 def create_duration(row):
+    if pd.isnull(row['BEGIN_YEARMONTH']) or pd.isna(row['BEGIN_YEARMONTH']) or pd.isnull(
+            row['END_YEARMONTH']) or pd.isna(row['END_YEARMONTH']):
+        return None
     begin_date = to_datetime(row['BEGIN_YEARMONTH'], row['BEGIN_DAY'])
     end_date = to_datetime(row['END_YEARMONTH'], row['END_DAY'])
+    if end_date < begin_date:
+        return None
     return (end_date - begin_date).days + 1
 
 
 def transform_lookup_population_density(population_density_dict):
     def transform(row):
+        if pd.isnull(row['YEAR']) or pd.isna(row['YEAR']):
+            return None
         year = find_nearest(range(1990, 2020, 10), row['YEAR'])
         density_dict = population_density_dict.get((row['STATE'], year), None)
         if density_dict is not None:
             return density_dict.get('density', None)
         else:
             return None
+
     return transform
 
 
@@ -172,6 +180,7 @@ def fill_missing_values(data):
     data['BEGIN_LAT'] = data.apply(fill_lat(data), axis=1)
     data['BEGIN_LON'] = data.apply(fill_lon(data), axis=1)
     return data
+
 
 def drop_rows_with_missing_values(data, columns):
     return data.dropna(subset=columns)

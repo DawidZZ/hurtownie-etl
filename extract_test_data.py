@@ -6,7 +6,9 @@ input_file = 'data/details.csv'  # Zmień tę nazwę na nazwę swojego pliku CSV
 df = pd.read_csv(input_file)
 
 # Pobieranie pierwszych 12 rekordów
-first_12_records = df.head(12)
+first_15_records = df.head(15)
+test_6 = first_15_records.tail(6)
+first_12_records = first_15_records.head(12)
 
 # Tworzenie 3 niepoprawnych rekordów z odpowiednią liczbą kolumn
 invalid_records = []
@@ -30,25 +32,10 @@ for _ in range(3):
 invalid_records_df = pd.DataFrame(invalid_records, columns=df.columns)
 
 # Łączenie poprawnych i niepoprawnych rekordów
-combined_df = pd.concat([first_12_records, invalid_records_df], ignore_index=True)
+combined_df = pd.concat([test_6, invalid_records_df], ignore_index=True)
 
 # Zapis do nowego pliku CSV
-output_file = 'test_details.csv'
+output_file = 'data/test.csv'
 combined_df.to_csv(output_file, index=False)
-
-
-
-# Wczytywanie pliku CSV
-df = pd.read_csv(input_file)
-
-# Usuwanie pierwszych 3 rekordów
-df_without_first_3 = df.iloc[3:]
-
-# Zapis do nowego pliku CSV
-output_file = 'details_without_3.csv'
-df_without_first_3.to_csv(output_file, index=False)
-
-print(f'Nowy plik został zapisany jako {output_file}')
-
-
-print(f'Nowy plik został zapisany jako {output_file}')
+output_file = 'data/test_init.csv'
+first_12_records.to_csv(output_file, index=False)
