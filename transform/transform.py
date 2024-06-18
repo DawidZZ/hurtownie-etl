@@ -12,25 +12,13 @@ VALID_US_STATE_NAMES = [
     'UTAH', 'VERMONT', 'VIRGINIA', 'WASHINGTON', 'WEST VIRGINIA', 'WISCONSIN', 'WYOMING'
 ]
 
-
-def transform_damage_property_to_number(damage_property: object):
-    damage_property = str(damage_property)
-    if pd.isnull(damage_property):
-        return 0
-    elif 'K' in damage_property:
-        damage_property = damage_property[:-1].strip()
-        return float(damage_property) * 1000 if damage_property.isdigit() else 0.0
-    elif 'M' in damage_property:
-        damage_property = damage_property[:-1].strip()
-        return float(damage_property) * 1000000 if damage_property.isdigit() else 0.0
-    else:
-        damage_property = damage_property[:-1].strip()
-        return float(damage_property) if damage_property.isdigit() else 0.0
+VALID_MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November',
+]
 
 
 def create_group_magnitude(data):
     magnitude = data['MAGNITUDE']
-    magnitude_type = data['MAGNITUDE_TYPE']
 
     if pd.isnull(magnitude):
         return 'nie dotyczy'
@@ -80,6 +68,8 @@ def create_group_damage_property(damage_property):
 
 
 def to_datetime(yearmonth, day):
+    yearmonth = int(yearmonth)
+    day = int(day)
     year = yearmonth // 100
     month = yearmonth % 100
     return datetime(year, month, day)
@@ -103,7 +93,7 @@ def transform_lookup_population_density(population_density_dict):
 
 
 def transform_get_month_from_yearmonth(yearmonth):
-    return int(str(yearmonth)[-2:])
+    return int(yearmonth) % 100
 
 
 def find_nearest(array, value):
@@ -147,8 +137,7 @@ def fill_lon(data):
 
 
 def insert_population_density_to_main_dataset(data, population_density_data):
-    population_density_data['state'] = population_density_data['state'].apply(
-        str.upper)
+    population_density_data.dropna(inplace=True)
     population_density_dict = population_density_data.set_index(
         ['state', 'year']).to_dict(orient='index')
     data['population_density'] = data.apply(
@@ -174,8 +163,9 @@ def drop_unused_columns(data, required_columns):
     return data.loc[:, required_columns]
 
 
-def drop_invalid_rows(data):
-    return data[data['STATE'].str.upper().isin(VALID_US_STATE_NAMES)]
+# def drop_invalid_rows(data):
+#     data = data[data['MONTH_NAME'].str.capitalize().isin(VALID_MONTH_NAMES)]
+#     return data[data['STATE'].str.upper().isin(VALID_US_STATE_NAMES)]
 
 
 def fill_missing_values(data):
