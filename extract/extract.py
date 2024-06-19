@@ -5,7 +5,7 @@ from extract.converters import population_density_converters
 # DETAILS_FILE_PATH = 'data/details.csv'
 # DENSITY_FILE_PATH = 'data/density.csv'
 
-DETAILS_FILE_PATH = 'data/details.csv'
+DETAILS_FILE_PATH = 'data/test_init.csv'
 DENSITY_FILE_PATH = 'data/density.csv'
 
 

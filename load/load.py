@@ -88,7 +88,7 @@ def load_data_to_destination_tables(engine):
         FROM tmp_dim_source tmp
         LEFT JOIN dim_source ds
         ON tmp.source = ds.source
-        WHERE ds.id IS NULL;
+        WHERE ds.id IS NULL AND tmp.source IS NOT NULL;
         """)
         conn.execute(insert_dim_source)
 
@@ -99,7 +99,7 @@ def load_data_to_destination_tables(engine):
         FROM tmp_dim_flood_cause tmp
         LEFT JOIN dim_flood_cause dfc
         ON tmp.flood_cause = dfc.flood_cause
-        WHERE dfc.id IS NULL;
+        WHERE dfc.id IS NULL AND tmp.flood_cause IS NOT NULL;
         """)
         conn.execute(insert_dim_flood_cause)
 
